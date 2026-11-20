@@ -4,6 +4,13 @@ Proyecto del webinar: cómo pasar de un notebook a un modelo que vive en producc
 Usamos datos reales del [COES](https://www.coes.org.pe/Portal/portalinformacion/demanda):
 la demanda eléctrica del SEIN, medida cada 30 minutos.
 
+![Simulación 2020](simulacion_2020.png)
+
+**La historia:** un modelo simple predice la demanda con ~2-3% de error. El 16 de marzo de 2020
+empieza la cuarentena, la demanda cae ~38% en una semana y el modelo se equivoca hasta 20%.
+El monitoreo lo detecta y el sistema se reentrena solo. En junio, con la reactivación económica,
+la demanda vuelve a subir rápido: otra alerta, otro reentrenamiento.
+
 ## El proyecto, paso a paso
 
 Cada etapa es un tag de git. Para ver una etapa: `git checkout <tag>`.
@@ -35,6 +42,10 @@ uv run python -m pipeline.predict      # 3. predecir la demanda de hoy
 # O todo junto, como corre cada día en la nube
 uv run python -m pipeline.job_diario
 
+# La demo: simular nov-2019 a jul-2020 día por día (~30 s) -> simulacion_2020.png
+uv run python -m pipeline.simular
+uv run mlflow ui --backend-store-uri sqlite:///mlflow_simulacion.db   # los reentrenamientos en MLflow
+
 # Ver los experimentos y el registro de modelos en http://localhost:5000
 uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
 ```
@@ -49,8 +60,10 @@ uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
 | `pipeline/train.py` | Entrena XGBoost con validación temporal y guarda el modelo |
 | `pipeline/registro.py` | Registra parámetros y métricas de cada entrenamiento en MLflow, para comparar experimentos |
 | `pipeline/predict.py` | Predice la demanda de un día y guarda la predicción |
-| `pipeline/job_diario.py` | El job de cada día: ingesta, reentrenamiento (cada 7 días) y predicción |
+| `pipeline/monitor.py` | Compara predicciones con la realidad: error de los últimos 7 días y alerta |
+| `pipeline/job_diario.py` | El job de cada día: ingesta, monitoreo, reentrenamiento si hay alerta, predicción |
 | `pipeline/aws.py` | Punto de entrada de la Lambda: trae `data/` de S3, corre el job y la devuelve |
+| `pipeline/simular.py` | "Viaja en el tiempo": corre el job día por día durante 2020 y grafica |
 
 ## Tests y CI
 
@@ -93,6 +106,25 @@ Lambda; ahora tiene su test (`tests/test_job_diario.py`).
 **El modelo:** la demanda promedio de un día se predice con la de los 14 días anteriores
 (`lag_1` ... `lag_14`) y el día de la semana. XGBoost no sabe nada de tiempo: convertimos la
 serie en una tabla con `shift()`. Benchmark: el pronóstico oficial del COES.
+
+## Preguntas frecuentes
+
+**¿Por qué monitorear el error y no el drift de los datos?** En series de tiempo la distribución
+de los datos cambia siempre (verano vs. invierno): un detector de drift sobre los inputs alertaría
+todo el tiempo. Como aquí el valor real llega al día siguiente, medimos directamente lo que importa:
+el error. En problemas donde la respuesta tarda meses (por ejemplo, la mora de un crédito), no hay
+esa suerte y se vigila el drift de los datos como señal temprana.
+
+**¿Por qué esperar 7 días antes de dar una alerta?** Para no reaccionar a un solo día raro
+(un feriado dispara el error de ese día) y darle a cada modelo nuevo una oportunidad justa.
+
+**¿Por qué reentrenar cuando hay alerta y no cada semana?** Reentrenar "a ciegas" cuesta y
+puede empeorar un modelo que funcionaba bien. Reentrenar por alerta responde a lo que pasa en el
+mundo. En la versión `v3-nuevos-datos` el job reentrenaba cada 7 días: compáralo con `git diff
+v3-nuevos-datos v4-monitoreo -- pipeline/job_diario.py`.
+
+**¿Por qué XGBoost falla tanto con la cuarentena?** Los árboles no extrapolan: nunca vieron una
+demanda de 4,000 MW y no pueden predecirla. Hasta que se reentrenan con datos nuevos.
 
 ## Datos
 

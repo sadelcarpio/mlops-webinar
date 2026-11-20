@@ -19,8 +19,9 @@ ANIOS_ENTRENAMIENTO = 3
 DIAS_VALIDACION = 28
 PARAMS_XGB = {"n_estimators": 400, "max_depth": 4, "learning_rate": 0.05}
 
-# Job diario: reentrenar el modelo cada cierta cantidad de días
-DIAS_ENTRE_REENTRENOS = 7
+# Monitoreo: si el error de los últimos días supera el umbral, se reentrena
+VENTANA_MONITOREO = 7  # días
+UMBRAL_MAPE = 5.0  # %
 
 
 def ruta(nombre: str) -> Path:
