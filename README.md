@@ -85,9 +85,11 @@ se quiere predecir, y que entrenar y predecir funcionen de punta a punta.
 
 ## En la nube (AWS)
 
-```
-EventBridge Scheduler ──(todos los días, 6:00 am Lima)──► Lambda (imagen Docker) ◄──► S3 (carpeta data/)
-```
+![Arquitectura](docs/arquitectura.png)
+
+Todos los días a las 6:00 am (hora de Lima), EventBridge Scheduler invoca la Lambda. La Lambda trae
+la carpeta `data/` desde S3, descarga los datos de ayer del COES, monitorea, reentrena si hay alerta,
+predice y devuelve `data/` a S3. El diagrama se genera con código: `docs/arquitectura.py`.
 
 ```bash
 aws login                 # o aws configure
