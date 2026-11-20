@@ -1,0 +1,17 @@
+[project]
+name = "mlops-webinar"
+version = "0.1.0"
+description = "MLOps en la práctica: pronóstico de la demanda eléctrica del SEIN (Perú)"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.11.2",
+    "pandas>=3.1.1",
+    "requests>=2.34.2",
+    "scikit-learn>=1.9.1",
+    "xgboost-cpu>=3.4.1",
+]
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+]
