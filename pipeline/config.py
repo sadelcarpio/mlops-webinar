@@ -7,6 +7,9 @@ from zoneinfo import ZoneInfo
 # Carpeta donde viven los datos, el modelo y las predicciones
 DATA_DIR = Path(os.getenv("DATA_DIR", "data"))
 
+# Historial de predicciones: lo escribe predict y lo leen monitor y simular (un solo nombre para todos)
+ARCHIVO_PREDICCIONES = "predicciones.parquet"
+
 # Registro de experimentos (MLflow). Vacío = no registrar (por ejemplo, en la Lambda)
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
 

@@ -12,7 +12,7 @@ from pipeline.train import cargar_modelo, mape
 def monitorear(hoy: pd.Timestamp) -> dict:
     diario = pd.read_parquet(config.ruta("demanda_diaria.parquet"))
     _, metadata = cargar_modelo()
-    archivo_predicciones = config.ruta("predicciones.parquet")
+    archivo_predicciones = config.ruta(config.ARCHIVO_PREDICCIONES)
     predicciones = pd.read_parquet(archivo_predicciones) if archivo_predicciones.exists() else None
 
     resultado = {"modelo": metadata["entrenado_hasta"], "dias_evaluados": 0,

@@ -39,7 +39,7 @@ def simular(desde: pd.Timestamp, hasta: pd.Timestamp) -> None:
 
 def graficar(hasta: pd.Timestamp) -> None:
     diario = pd.read_parquet(config.ruta("demanda_diaria.parquet"))
-    pred = pd.read_parquet(config.ruta("predicciones.parquet")).join(diario)
+    pred = pd.read_parquet(config.ruta(config.ARCHIVO_PREDICCIONES)).join(diario)
     monitoreo = pd.read_parquet(config.ruta("monitoreo.parquet")).dropna(subset=["mape"])
     reentrenos = monitoreo.index[monitoreo["alerta"]]
 

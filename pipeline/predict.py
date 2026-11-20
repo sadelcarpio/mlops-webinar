@@ -29,7 +29,7 @@ def predecir(fecha: pd.Timestamp) -> float:
 
 def guardar_prediccion(fecha: pd.Timestamp, prediccion: float, modelo: str) -> None:
     """Agrega la predicción al historial (si ya había una para esa fecha, la reemplaza)."""
-    archivo = config.ruta("predicciones.parquet")
+    archivo = config.ruta(config.ARCHIVO_PREDICCIONES)
     nueva = pd.DataFrame({"prediccion": [prediccion], "modelo": [modelo]},
                          index=pd.DatetimeIndex([fecha], name="fecha"))
     if archivo.exists():
