@@ -13,7 +13,7 @@ BUCKET="${NOMBRE}-${CUENTA}"
 IMAGEN="${CUENTA}.dkr.ecr.${REGION}.amazonaws.com/${NOMBRE}:latest"
 
 echo "==> 1/5 Bucket S3 privado: ${BUCKET}"
-if ! aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+if ! aws s3api head-bucket --bucket "$BUCKET" >/dev/null 2>&1; then
   if [ "$REGION" = "us-east-1" ]; then
     aws s3api create-bucket --bucket "$BUCKET" --region "$REGION" >/dev/null
   else
@@ -47,7 +47,7 @@ aws iam put-role-policy --role-name "${NOMBRE}-lambda" --policy-name acceso-buck
 ROL_LAMBDA=$(aws iam get-role --role-name "${NOMBRE}-lambda" --query Role.Arn --output text)
 
 echo "==> 4/5 Función Lambda"
-VARIABLES="Variables={S3_BUCKET=${BUCKET},MLFLOW_TRACKING_URI=}"
+VARIABLES="{\"Variables\": {\"S3_BUCKET\": \"${BUCKET}\", \"MLFLOW_TRACKING_URI\": \"\"}}"  # JSON: admite valores vacíos
 if aws lambda get-function --function-name "$NOMBRE" --region "$REGION" >/dev/null 2>&1; then
   aws lambda update-function-code --function-name "$NOMBRE" --image-uri "$IMAGEN" --region "$REGION" >/dev/null
   aws lambda wait function-updated --function-name "$NOMBRE" --region "$REGION"
