@@ -68,13 +68,12 @@ uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
 ## Tests y CI
 
 ```bash
-uv run pytest                 # tests en tu máquina
-uv run ruff check pipeline tests
-
-# Lo mismo que corre GitHub Actions en cada push: tests DENTRO del contenedor
-docker build --target tests -t demanda-tests .
-docker run --rm demanda-tests
+make test          # lo mismo que corre GitHub Actions en cada push: lint + tests DENTRO del contenedor
+make test-rapido   # lint + tests en tu máquina, sin Docker (para iterar rápido)
 ```
+
+El `Makefile` es la única fuente de verdad: CI solo llama a `make test`, así que si pasa en tu
+máquina, pasa en CI.
 
 El `Dockerfile` tiene dos etapas: `produccion` (solo lo necesario para correr el pipeline) y
 `tests` (la misma imagen + pytest + los tests). Así probamos exactamente lo que se despliega.
