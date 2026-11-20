@@ -40,5 +40,5 @@ def guardar_prediccion(fecha: pd.Timestamp, prediccion: float, modelo: str) -> N
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--fecha", type=date.fromisoformat, default=date.today())
+    parser.add_argument("--fecha", type=date.fromisoformat, default=config.hoy())
     predecir(pd.Timestamp(parser.parse_args().fecha))

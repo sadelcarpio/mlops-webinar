@@ -59,5 +59,5 @@ def cargar_modelo() -> tuple[xgb.XGBRegressor, dict]:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--hasta", type=date.fromisoformat, default=date.today())
+    parser.add_argument("--hasta", type=date.fromisoformat, default=config.hoy())
     entrenar(pd.Timestamp(parser.parse_args().hasta))

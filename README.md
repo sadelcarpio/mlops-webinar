@@ -28,9 +28,12 @@ uv sync
 uv run jupyter lab notebooks/01_modelo_demanda.ipynb
 
 # El pipeline, paso a paso
-uv run python -m pipeline.ingest --desde-anio 2016   # 1. descargar datos del COES
-uv run python -m pipeline.train                      # 2. entrenar (y registrar en MLflow)
-uv run python -m pipeline.predict                    # 3. predecir la demanda de hoy
+uv run python -m pipeline.ingest       # 1. descargar datos del COES (la 1ra vez, todo desde 2016)
+uv run python -m pipeline.train        # 2. entrenar (y registrar en MLflow)
+uv run python -m pipeline.predict      # 3. predecir la demanda de hoy
+
+# O todo junto, como corre cada día en la nube
+uv run python -m pipeline.job_diario
 
 # Ver los experimentos y el registro de modelos en http://localhost:5000
 uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
@@ -46,6 +49,8 @@ uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
 | `pipeline/train.py` | Entrena XGBoost con validación temporal y guarda el modelo |
 | `pipeline/registro.py` | Registra parámetros y métricas de cada entrenamiento en MLflow, para comparar experimentos |
 | `pipeline/predict.py` | Predice la demanda de un día y guarda la predicción |
+| `pipeline/job_diario.py` | El job de cada día: ingesta, reentrenamiento (cada 7 días) y predicción |
+| `pipeline/aws.py` | Punto de entrada de la Lambda: trae `data/` de S3, corre el job y la devuelve |
 
 ## Tests y CI
 
@@ -64,6 +69,26 @@ El `Dockerfile` tiene dos etapas: `produccion` (solo lo necesario para correr el
 Los tests (`tests/`) usan datos sintéticos, no necesitan internet y verifican lo que más duele
 si se rompe: que el dato de las 00:00 vaya al día correcto, que las features nunca usen el día que
 se quiere predecir, y que entrenar y predecir funcionen de punta a punta.
+
+## En la nube (AWS)
+
+```
+EventBridge Scheduler ──(todos los días, 6:00 am Lima)──► Lambda (imagen Docker) ◄──► S3 (carpeta data/)
+```
+
+```bash
+aws login                 # o aws configure
+./infra/deploy.sh         # crea el bucket, la imagen, la Lambda, los roles y la programación diaria
+aws lambda invoke --function-name demanda-sein --cli-read-timeout 310 respuesta.json && cat respuesta.json
+./infra/destroy.sh        # borra todo al terminar
+```
+
+La Lambda corre la **misma imagen** que se probó en CI (etapa `produccion` del `Dockerfile`).
+Costo: prácticamente cero (una ejecución de ~1 minuto al día y unos pocos MB en S3).
+
+**¿Por qué la hora de Lima en el código?** Los servidores en la nube corren en UTC: después de
+las 7 pm en Perú, para el servidor ya es "mañana". Este bug apareció de verdad al probar la
+Lambda; ahora tiene su test (`tests/test_job_diario.py`).
 
 **El modelo:** la demanda promedio de un día se predice con la de los 14 días anteriores
 (`lag_1` ... `lag_14`) y el día de la semana. XGBoost no sabe nada de tiempo: convertimos la
