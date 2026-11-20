@@ -46,7 +46,7 @@ uv run python -m pipeline.job_diario
 uv run python -m pipeline.simular
 uv run mlflow ui --backend-store-uri sqlite:///mlflow_simulacion.db   # los reentrenamientos en MLflow
 
-# Ver los experimentos y el registro de modelos en http://localhost:5000
+# Ver los experimentos (parámetros y métricas de cada entrenamiento) en http://localhost:5000
 uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
 ```
 
