@@ -23,8 +23,33 @@ Requisitos: Python 3.12 y [uv](https://docs.astral.sh/uv/).
 
 ```bash
 uv sync
+
+# El notebook original
 uv run jupyter lab notebooks/01_modelo_demanda.ipynb
+
+# El pipeline, paso a paso
+uv run python -m pipeline.ingest --desde-anio 2016   # 1. descargar datos del COES
+uv run python -m pipeline.train                      # 2. entrenar (y registrar en MLflow)
+uv run python -m pipeline.predict                    # 3. predecir la demanda de hoy
+
+# Ver los experimentos y el registro de modelos en http://localhost:5000
+uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
 ```
+
+## El código
+
+| Archivo | Qué hace |
+|---|---|
+| `pipeline/config.py` | Toda la configuración en un solo lugar |
+| `pipeline/ingest.py` | Descarga la demanda cada 30 min del COES y la convierte en un valor por día |
+| `pipeline/features.py` | Construye las features. **La misma función** se usa al entrenar y al predecir |
+| `pipeline/train.py` | Entrena XGBoost con validación temporal y guarda el modelo |
+| `pipeline/registro.py` | Registra parámetros y métricas de cada entrenamiento en MLflow, para comparar experimentos |
+| `pipeline/predict.py` | Predice la demanda de un día y guarda la predicción |
+
+**El modelo:** la demanda promedio de un día se predice con la de los 14 días anteriores
+(`lag_1` ... `lag_14`) y el día de la semana. XGBoost no sabe nada de tiempo: convertimos la
+serie en una tabla con `shift()`. Benchmark: el pronóstico oficial del COES.
 
 ## Datos
 
