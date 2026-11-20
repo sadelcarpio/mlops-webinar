@@ -1,0 +1,7 @@
+.venv
+.git
+.idea
+data
+mlruns
+mlflow.db
+notebooks

@@ -47,6 +47,24 @@ uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
 | `pipeline/registro.py` | Registra parámetros y métricas de cada entrenamiento en MLflow, para comparar experimentos |
 | `pipeline/predict.py` | Predice la demanda de un día y guarda la predicción |
 
+## Tests y CI
+
+```bash
+uv run pytest                 # tests en tu máquina
+uv run ruff check pipeline tests
+
+# Lo mismo que corre GitHub Actions en cada push: tests DENTRO del contenedor
+docker build --target tests -t demanda-tests .
+docker run --rm demanda-tests
+```
+
+El `Dockerfile` tiene dos etapas: `produccion` (solo lo necesario para correr el pipeline) y
+`tests` (la misma imagen + pytest + los tests). Así probamos exactamente lo que se despliega.
+
+Los tests (`tests/`) usan datos sintéticos, no necesitan internet y verifican lo que más duele
+si se rompe: que el dato de las 00:00 vaya al día correcto, que las features nunca usen el día que
+se quiere predecir, y que entrenar y predecir funcionen de punta a punta.
+
 **El modelo:** la demanda promedio de un día se predice con la de los 14 días anteriores
 (`lag_1` ... `lag_14`) y el día de la semana. XGBoost no sabe nada de tiempo: convertimos la
 serie en una tabla con `shift()`. Benchmark: el pronóstico oficial del COES.
